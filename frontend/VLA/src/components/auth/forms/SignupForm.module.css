@@ -1,0 +1,134 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  margin-bottom: 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.input,
+.fileInput {
+  padding: 0.6rem 0.8rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  transition: border-color 0.3s;
+}
+
+.input:focus,
+.fileInput:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+.error {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
+}
+
+.submitButton {
+  background-color: #5100ff;
+  color: white;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.submitButton:hover {
+  background-color: #0056b3;
+}
+
+.avatarPreview {
+  margin-top: 0.5rem;
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 1px solid #ddd;
+}
+
+.submitButton:disabled {
+  background: #bdbdbd;
+  cursor: not-allowed;
+}
+
+.separator {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0 1rem 0;
+  width: 100%;
+}
+.line {
+  flex: 1;
+  height: 1px;
+  background: #ddd;
+}
+.orText {
+  margin: 0 1rem;
+  color: #aaa;
+  font-weight: 500;
+}
+
+.socialLogin {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+}
+.iconButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  color: #333;
+  cursor: not-allowed;
+}
+.icon {
+  font-size: 1.3rem;
+}
+
+.socialLogin > div {
+  width: 100% !important;
+  display: flex;
+  justify-content: center;
+}
+  
+.authLinks {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.linkButton {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  text-decoration: underline;
+}
+
+.linkButton:hover {
+  color: #0056b3;
+}

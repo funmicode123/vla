@@ -1,0 +1,62 @@
+.zoomContainer{
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.zoomCard{
+  text-align: center;
+}
+
+.zoomLogo{
+  color: #2d8cff;
+  font-size: 2.5rem;
+  margin: 0;
+  font-weight: bold;
+}
+
+.zoomTitle {
+  margin: 0.5rem 0 2rem;
+  font-size: 1.8rem;
+  color: #1c1e21;
+}
+
+.zoomButtons{
+  border: groove;
+  display: block;
+  width: 200px;
+  padding: 12px;
+  margin: 0.5rem auto;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+.zoomJoin{
+  background-color: #2d8cff;
+  color: white;
+}
+
+.zoomSignin{
+  background-color: white;
+  border: 1px solid #ccc;
+}
+
+.zoomFooter{
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  color: #888;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  align-items: center;
+}
+
+.zoomLanguage{
+  padding: 4px 8px;
+  border-radius: 3px;
+}

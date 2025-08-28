@@ -1,0 +1,12 @@
+.joinMeetingButton {
+  background-color: #2d8cff;
+  color: white;
+  width: 200px;
+  padding: 12px;
+  margin: 0.5rem auto;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  display: block;
+}

@@ -1,0 +1,38 @@
+{
+  "name": "virtuallearningapp",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node src/server",
+    "dev": "nodemon src/server"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@chakra-ui/icons": "^2.2.4",
+    "@chakra-ui/react": "^3.21.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@tensorflow-models/blazeface": "^0.1.0",
+    "@tensorflow-models/facemesh": "^0.0.4",
+    "@tensorflow/tfjs": "^4.22.0",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "framer-motion": "^12.17.0",
+    "google-auth-library": "^10.1.0",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.15.0",
+    "multer": "^2.0.1",
+    "nodemon": "^3.1.10",
+    "socket.io": "^4.8.1",
+    "stream-chat": "^9.5.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^11.1.0"
+  }
+}
