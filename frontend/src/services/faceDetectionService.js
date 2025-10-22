@@ -34,7 +34,7 @@ class FaceDetectionService {
       console.log('✅ Face detection models loaded successfully');
       return true;
     } catch (error) {
-      console.error('❌ Failed to load face detection models:', error);
+      console.error('Failed to load face detection models:', error);
       this.retryAttempts++;
       
       if (this.retryAttempts < this.maxRetries) {
@@ -60,7 +60,7 @@ class FaceDetectionService {
 
       if (detection) {
         this.lastDetectionTime = Date.now();
-        this.retryAttempts = 0; // Reset retry attempts on successful detection
+        this.retryAttempts = 0; 
         
         return {
           detected: true,
@@ -89,7 +89,6 @@ class FaceDetectionService {
   calculateAttentionScore(expressions) {
     if (!expressions) return 0;
 
-    // Calculate attention based on expression weights
     const attentionWeights = {
       happy: 0.8,
       sad: 0.3,
@@ -120,7 +119,6 @@ class FaceDetectionService {
       probability > max.probability ? { expression, probability } : max
     , { expression: 'neutral', probability: 0 });
 
-    // Map expressions to engagement types
     const expressionMap = {
       happy: 'engaged',
       sad: 'sad',
@@ -171,7 +169,7 @@ class FaceDetectionService {
 
     let attentionHistory = [];
     let lastAlertTime = 0;
-    const alertCooldown = 30000; // 30 seconds between alerts
+    const alertCooldown = 30000; 
 
     this.detectionInterval = setInterval(async () => {
       try {
@@ -181,7 +179,6 @@ class FaceDetectionService {
           const attentionScore = this.calculateAttentionScore(result.expressions);
           const expressionType = this.determineExpressionType(result.expressions);
           
-          // Store attention data
           const attentionData = {
             score: attentionScore,
             expression: expressionType,
@@ -190,12 +187,10 @@ class FaceDetectionService {
           };
 
           attentionHistory.push(attentionData);
-          
-          // Keep only last 60 seconds of data
+
           const oneMinuteAgo = Date.now() - 60000;
           attentionHistory = attentionHistory.filter(data => data.timestamp > oneMinuteAgo);
 
-          // Calculate average attention over time
           const averageAttention = attentionHistory.reduce((sum, data) => sum + data.score, 0) / attentionHistory.length;
 
           // Check for engagement issues
@@ -292,7 +287,6 @@ class FaceDetectionService {
     }
   }
 
-  // Cleanup method
   destroy() {
     this.stopDetection();
     this.isInitialized = false;

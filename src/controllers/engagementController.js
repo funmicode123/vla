@@ -1,6 +1,5 @@
 const EngagementLogRepository = require('../repositories/engagementLog.repository');
 
-// Log a new engagement event
 exports.logEngagement = async (req, res) => {
   try {
     const log = await EngagementLogRepository.create(req.body);
@@ -10,7 +9,6 @@ exports.logEngagement = async (req, res) => {
   }
 };
 
-// Fetch engagement logs (by session, user, or both)
 exports.getEngagementLogs = async (req, res) => {
   try {
     const { sessionId, userId } = req.query;

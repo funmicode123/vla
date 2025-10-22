@@ -1,4 +1,3 @@
-// src/services/user.service.js
 const crypto = require('crypto');
 const User = require('../models/user');
 // You may need to implement or import your email utility and token storage logic
