@@ -1,4 +1,4 @@
-const EngagementLog = require('../models/EngagementLog');
+const EngagementLog = require('../models/engagementLog');
 
 class EngagementLogRepository {
   async create(logData) {
@@ -17,9 +17,9 @@ class EngagementLogRepository {
   }
 
   async findByExpression(sessionId, expression) {
-    return await EngagementLog.find({ 
-      session_id: sessionId, 
-      expression_type: expression 
+    return await EngagementLog.find({
+      session_id: sessionId,
+      expression_type: expression
     });
   }
 

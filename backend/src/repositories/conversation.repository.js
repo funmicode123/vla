@@ -1,5 +1,5 @@
-const Conversation = require('../models/Conversation');
-const Message = require('../models/Message');
+const Conversation = require('../models/conversation');
+const Message = require('../models/message');
 
 
 class ConversationRepository {
@@ -28,9 +28,9 @@ class ConversationRepository {
   async addMessage(conversationId, messageId) {
     return await Conversation.findByIdAndUpdate(
       conversationId,
-      { 
-        $push: { messages: messageId }, 
-        $set: { updatedAt: new Date() } 
+      {
+        $push: { messages: messageId },
+        $set: { updatedAt: new Date() }
       },
       { new: true }
     );
@@ -44,10 +44,10 @@ class ConversationRepository {
     );
   }
 
-  async removeMessageFromConversation(conversationId, messageId){
+  async removeMessageFromConversation(conversationId, messageId) {
     return await Conversation.findByIdAndUpdate(conversationId,
-       { $pull: { messages: messageId } },
-       { new: true }
+      { $pull: { messages: messageId } },
+      { new: true }
     );
   }
 
