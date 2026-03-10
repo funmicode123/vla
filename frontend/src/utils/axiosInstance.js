@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const instance = axios.create({
   baseURL: import.meta.env.VITE_BASE_URL,
+  withCredentials: true,
 });
 
 instance.interceptors.request.use(
@@ -10,13 +11,13 @@ instance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     if (config.data instanceof FormData) {
       config.headers['Content-Type'] = 'multipart/form-data';
     } else if (!config.headers['Content-Type']) {
       config.headers['Content-Type'] = 'application/json';
     }
-    
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -33,11 +34,11 @@ instance.interceptors.response.use(
         localStorage.removeItem('streamUserEmail');
         localStorage.removeItem('streamUserId');
         localStorage.removeItem('streamUser');
-        
+
         window.location.href = '/login';
       }
     }
-    
+
     return Promise.reject(error);
   }
 );

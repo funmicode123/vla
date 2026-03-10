@@ -39,23 +39,36 @@ app.use('/api/v1/sessions', sessionRouter);
 app.use('/api/v1', conversationRouter);
 app.use('/api/v1', engagementRoutes);
 
-const swaggerOptions = {
-  swaggerOptions: {
-    authAction: {
-      bearerAuth: {
-        name: "bearerAuth",
-        schema: {
-          type: "http",
-          in: "header",
-          name: "Authorization",
-          scheme: "bearer",
-          bearerFormat: "JWT",
+let swaggerOptions = {};
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    const testToken = jwt.sign({ id: '64dcebbd2a2a0123456789a1' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    swaggerOptions = {
+      swaggerOptions: {
+        authAction: {
+          bearerAuth: {
+            name: "bearerAuth",
+            schema: {
+              type: "http",
+              in: "header",
+              name: "Authorization",
+              scheme: "bearer",
+              bearerAuth: "JWT",
+            },
+            value: `Bearer ${testToken}`,
+          },
         },
-        value: `Bearer ${jwt.sign({ id: '64dcebbd2a2a0123456789a1' }, process.env.JWT_SECRET, { expiresIn: '1h' })}`,
       },
-    },
-  },
-};
+    };
+    console.log('Swagger test token generated successfully');
+  } catch (err) {
+    console.warn('Failed to generate Swagger test token (check JWT_SECRET):', err.message);
+    swaggerOptions = {};
+  }
+} else {
+  console.log('Skipping Swagger test token in production');
+}
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerOptions));
 
 app.get('/', (req, res) => res.send('Welcome to the Attention Tracker API'));
@@ -80,8 +93,8 @@ if (!MONGODB_URI) {
 mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log('MongoDB connected');
-    server.listen(process.env.PORT || 5000, () => {
-      console.log(`Server with Socket.IO running on http://localhost:${process.env.PORT || 5000}`);
+    server.listen(process.env.PORT, '0.0.0.0', () => {
+      console.log(`Server with Socket.IO running on ${process.env.PORT}`);
     });
   })
   .catch(err => {

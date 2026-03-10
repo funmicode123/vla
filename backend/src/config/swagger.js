@@ -3,7 +3,15 @@ const swaggerUi = require('swagger-ui-express');
 const generateToken = require('../utils/generateToken');
 const path = require('path');
 
-const token = generateToken();
+let token = null;
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    token = generateToken();
+    console.log('\n🔐 Test JWT Token (valid for 1h):\n', token, '\nPaste this token in Swagger "Authorize" button.\n');
+  } catch (error) {
+    console.warn('Failed to generate test JWT token. Ensure JWT_SECRET is set locally for dev. Proceeding without token.', error.message);
+  }
+}
 
 const options = {
   definition: {
@@ -37,8 +45,10 @@ const options = {
 };
 
 const swaggerSpec = swaggerJsdoc(options);
+if (token){
+  swaggerSpec.token = token;
+}
 
-swaggerSpec.token = token;
 
 module.exports = {
   swaggerUi,
