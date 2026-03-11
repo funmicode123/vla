@@ -16,8 +16,22 @@ const googleAuthRouter = require('./routes/googleAuth.routes');
 require('dotenv').config();
 
 // Configure CORS
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://frontend-iota-nine-35.vercel.app',
+    'https://vla-production.up.railway.app'
+];
+
 app.use(cors({
-    origin: '*', // For debugging production errors, we can restrict this later
+    origin: function (origin, callback) {
+        // allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
