@@ -13,6 +13,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { jwtDecode } from 'jwt-decode';
 import ChatBox from './ChatBox';
 import './VideoCallLayout.css';
+import { Copy } from 'lucide-react';
 import { Toast } from "../../../ui/Modal";
 import Modal from "../../../ui/Modal";
 import api from '../../../../utils/api';
@@ -23,6 +24,8 @@ import { MdCallEnd } from 'react-icons/md';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { checkSessionPermissionThunk } from '../../../../store/slices/sessionSlice';
+import faceDetectionService from '../../../../services/faceDetectionService';
+import alertService from '../../../../services/alertService';
 
 const apiKey = import.meta.env.VITE_STREAM_API_KEY;
 
@@ -48,18 +51,22 @@ export default function Session() {
   const [sessionEnded, setSessionEnded] = useState(false);
   const [engagementData, setEngagementData] = useState([]);
   const [showSummary, setShowSummary] = useState(false);
-  const [allParticipantsData, setAllParticipantsData] = useState([]); 
+  const [allParticipantsData, setAllParticipantsData] = useState([]);
   const [lastSentIndex, setLastSentIndex] = useState(-1);
   const [isRecording, setIsRecording] = useState(false);
   const [cameraPermissionDenied, setCameraPermissionDenied] = useState(false);
   const [micPermissionDenied, setMicPermissionDenied] = useState(false);
   const [reaction, setReaction] = useState(false);
+  const [distractionActive, setDistractionActive] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [recordedChunks, setRecordedChunks] = useState([]);
+  const videoRef = useRef(null); // Ref for local video (used for face detection)
 
   // Chat panel width state for resizing
   const [chatWidth, setChatWidth] = useState(380);
   const chatPanelRef = useRef(null);
   const resizing = useRef(false);
-  const [windowWidth, setWindowWidth] = useState(1200); 
+  const [windowWidth, setWindowWidth] = useState(1200);
 
   // Mouse events for resizing chat panel
   const onChatResizeMouseDown = (e) => {
@@ -80,7 +87,7 @@ export default function Session() {
   useEffect(() => {
     // Set initial window width
     setWindowWidth(window.innerWidth);
-    
+
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     window.addEventListener('mousemove', onChatResizeMouseMove);
@@ -105,7 +112,7 @@ export default function Session() {
       streamUser: localStorage.getItem('streamUser'),
       authToken: localStorage.getItem('authToken')
     });
-    
+
     if (sessionId) {
       console.log('📡 Dispatching permission check for sessionId:', sessionId);
       dispatch(checkSessionPermissionThunk(sessionId));
@@ -162,10 +169,10 @@ export default function Session() {
 
   useEffect(() => {
     if (!session) return;
-    
+
     console.log('⏰ Checking session end time...');
     console.log('📅 Session data:', session);
-    
+
     // Check if session has endTime, if not, set a default future time
     if (!session.endTime) {
       console.log('⚠️ No endTime found, setting default future time');
@@ -174,18 +181,18 @@ export default function Session() {
       console.log('⏰ Default end time set to:', defaultEndTime);
       return; // Don't set up timers if no end time
     }
-    
+
     const endTime = new Date(session.endTime).getTime();
     const now = Date.now();
     const msToEnd = endTime - now;
-    
+
     console.log('⏰ Time calculations:', {
       endTime: new Date(endTime),
       now: new Date(now),
       msToEnd,
       msToEndMinutes: Math.round(msToEnd / 60000)
     });
-    
+
     if (msToEnd <= 0) {
       console.log('⏰ Session has already ended, setting sessionEnded to true');
       setSessionEnded(true);
@@ -199,7 +206,7 @@ export default function Session() {
         hostTimer = setTimeout(() => {
           showToast('Session will end in 5 minutes. Please wrap up.', 'warning', 30000);
         }
-        , msToHostWarn);
+          , msToHostWarn);
       }
     }
 
@@ -245,18 +252,18 @@ export default function Session() {
 
     const setup = async () => {
       console.log('🚀 Starting session setup...');
-      
+
       // If session is not in Redux state, try to get it from localStorage
       let sessionData = session;
       let streamTokenData = streamToken;
-      
+
       console.log('🔍 Initial data check:', {
         sessionFromRedux: !!session,
         streamTokenFromRedux: !!streamToken,
         sessionData: !!sessionData,
         streamTokenData: !!streamTokenData
       });
-      
+
       if (!sessionData) {
         console.log('📦 Session not in Redux, checking localStorage...');
         const activeSession = localStorage.getItem('activeSession');
@@ -271,7 +278,7 @@ export default function Session() {
           console.warn('⚠️ No activeSession found in localStorage');
         }
       }
-      
+
       if (!streamTokenData) {
         console.log('🔑 StreamToken not in Redux, checking localStorage...');
         streamTokenData = localStorage.getItem('streamToken');
@@ -371,7 +378,7 @@ export default function Session() {
         setChannel(chatChannel);
         console.log('✅ Chat client and channel set in state');
         console.log('🎉 Session setup completed successfully!');
-        
+
         // Mark setup as complete
         setupCompleteRef.current = true;
       } catch (err) {
@@ -395,10 +402,66 @@ export default function Session() {
     setup();
 
     return () => {
-      if (callRef.current) callRef.current.leave().catch(() => {});
-      if (chatClient) chatClient.disconnectUser().catch(() => {});
+      if (callRef.current) callRef.current.leave().catch(() => { });
+      if (chatClient) chatClient.disconnectUser().catch(() => { });
+      faceDetectionService.stopDetection();
     };
   }, []); // Empty dependency array - only run once on mount
+
+  // Initialize face detection and alerts
+  useEffect(() => {
+    if (call && !isHost && setupCompleteRef.current) {
+      const initFaceDetection = async () => {
+        try {
+          await faceDetectionService.initialize();
+          await alertService.initialize(sessionId);
+
+          // We need a local stream for the face analysis
+          const localStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          if (videoRef.current) {
+            videoRef.current.srcObject = localStream;
+
+            faceDetectionService.startDetection(
+              videoRef.current,
+              (attentionData) => {
+                setEngagementData(prev => [...prev.slice(-19), attentionData]);
+
+                // Log to backend occasionally (e.g., every 10 seconds or on significant state change)
+                if (Math.random() < 0.1) {
+                  api.post('/api/v1/engagement', {
+                    session_id: session._id || session.id,
+                    user_id: streamUser.mongoId || streamUser.id, // Ensure we have the right ID format
+                    expression_type: attentionData.expression,
+                    confidence_score: attentionData.score,
+                    timestamp: new Date(),
+                    popup_message: 'Regular engagement check'
+                  }).catch(console.error);
+                }
+              },
+              (alert) => {
+                setDistractionActive(true);
+                showToast(alert.message, 'warning', 10000);
+
+                // Log distraction event
+                api.post('/api/v1/engagement', {
+                  session_id: session._id || session.id,
+                  user_id: streamUser.mongoId || streamUser.id,
+                  expression_type: 'distracted',
+                  confidence_score: 1.0,
+                  timestamp: new Date(),
+                  popup_message: alert.message
+                }).catch(console.error);
+              }
+            );
+          }
+        } catch (err) {
+          console.error('Face detection init error:', err);
+        }
+      };
+
+      initFaceDetection();
+    }
+  }, [call, isHost, sessionId, session, streamUser]);
 
   // On session end, fetch and visualize host summary
   useEffect(() => {
@@ -448,19 +511,19 @@ export default function Session() {
   if (!client || !call || !chatClient || !channel) {
     console.log('⏳ Component in loading state, waiting for session setup...');
     return (
-      <div className="video-call-root" style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        width: '100vw', 
+      <div className="video-call-root" style={{
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100vw',
         height: '100vh',
         justifyContent: 'center',
         alignItems: 'center',
         background: '#f5f5f5'
       }}>
-        <div style={{ 
-          padding: '2rem', 
-          background: 'white', 
-          borderRadius: '8px', 
+        <div style={{
+          padding: '2rem',
+          background: 'white',
+          borderRadius: '8px',
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
           textAlign: 'center'
         }}>
@@ -480,63 +543,101 @@ export default function Session() {
   }
 
   const handleMicToggle = async () => {
-  if (!call) return;
+    if (!call) return;
 
-  try {
-    await call.microphone.toggle();
-    setMicOn((prev) => !prev);
-  } catch (error) {
-    console.error("Failed to toggle microphone:", error);
-  }
-};
+    try {
+      await call.microphone.toggle();
+      setMicOn((prev) => !prev);
+    } catch (error) {
+      console.error("Failed to toggle microphone:", error);
+    }
+  };
 
-  
+
   const handleCameraToggle = async () => {
-  if (!call) return;
+    if (!call) return;
 
-  try {
-    if (cameraOn) {
-      await call.camera.disable();
-    } else {
-      await call.camera.enable();
+    try {
+      if (cameraOn) {
+        await call.camera.disable();
+      } else {
+        await call.camera.enable();
+      }
+      setCameraOn((prev) => !prev);
+    } catch (error) {
+      console.error("Failed to toggle camera:", error);
     }
-    setCameraOn((prev) => !prev);
-  } catch (error) {
-    console.error("Failed to toggle camera:", error);
-  }
-};
+  };
 
-const handleScreenShare = async () => {
-  if (!call) return;                
-  try {
-    if (screenSharing) {
-      await call.screenShare.disable();
-    } else {
-      // Optionally set settings before starting
-      // call.screenShare.setSettings({ contentHint: "detail" });
-      await call.screenShare.enable();   
+  const handleScreenShare = async () => {
+    if (!call) return;
+    try {
+      if (screenSharing) {
+        await call.screenShare.disable();
+      } else {
+        // Optionally set settings before starting
+        // call.screenShare.setSettings({ contentHint: "detail" });
+        await call.screenShare.enable();
+      }
+
+      setScreenSharing(prev => !prev);
+    } catch (err) {
+      console.error("Screen‑share toggle failed:", err);
+      // Optional: surface an error toast/snackbar for the user here
+      toast.error('Screen‑share toggle failed');
     }
-
-    setScreenSharing(prev => !prev);
-  } catch (err) {
-    console.error("Screen‑share toggle failed:", err);
-    // Optional: surface an error toast/snackbar for the user here
-    toast.error('Screen‑share toggle failed');
-  }
-};
+  };
 
   const handleCaptions = () => setCaptionsOn((v) => !v);
   const handleHandRaise = () => setHandRaised((v) => !v);
   const handleReaction = () => setReaction((v) => !v);
   const handleParticipants = () => setParticipantsOpen((v) => !v);
-  const handleLeave = () => window.location.href = '/dashboard'; 
+  const handleLeave = () => window.location.href = '/dashboard';
 
-  const handleRecordingToggle = () => {
-    setIsRecording((prev) => {
-      const newState = !prev;
-      showToast(newState ? 'Recording started.' : 'Recording stopped.', newState ? 'success' : 'info');
-      return newState;
-    });
+  const handleRecordingToggle = async () => {
+    if (isRecording) {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        setIsRecording(false);
+        showToast('Recording stopped. Preparing download...', 'info');
+      }
+    } else {
+      try {
+        // Capture screen for recording (host usually wants to record participants + content)
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: true });
+
+        const recorder = new MediaRecorder(stream);
+        const chunks = [];
+
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) chunks.push(e.data);
+        };
+
+        recorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `session-recording-${sessionId}-${Date.now()}.webm`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+
+          // Stop all tracks in the stream
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        recorder.start();
+        setMediaRecorder(recorder);
+        setRecordedChunks(chunks);
+        setIsRecording(true);
+        showToast('Recording started. You are capturing your screen.', 'success');
+      } catch (err) {
+        console.error('Recording setup error:', err);
+        toast.error('Failed to start recording. Please ensure you grant screen capture permissions.');
+      }
+    }
   };
 
   const HandRaiseIndicator = () => {
@@ -643,6 +744,37 @@ const handleScreenShare = async () => {
     >
       <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
         <div className="video-area" style={{ width: '100%', height: '100%', position: 'relative' }}>
+          {/* Session ID Overlay */}
+          <div style={{
+            position: 'absolute',
+            top: 20,
+            left: 20,
+            zIndex: 30,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            background: 'rgba(255, 255, 255, 0.9)',
+            padding: '8px 16px',
+            borderRadius: '12px',
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.3)'
+          }}>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-tighter invisible sm:visible">Session ID</span>
+              <span className="font-mono text-sm font-bold text-gray-800">{sessionId}</span>
+            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(sessionId);
+                showToast('Session ID copied!', 'success');
+              }}
+              className="p-2 hover:bg-blue-50 rounded-lg transition-colors group"
+              title="Copy Session ID"
+            >
+              <Copy className="h-4 w-4 text-gray-400 group-hover:text-blue-600" />
+            </button>
+          </div>
           <HandRaiseIndicator />
           <StreamVideo client={client}>
             <StreamCall call={call}>
@@ -698,6 +830,14 @@ const handleScreenShare = async () => {
           <Toast key={toast.id} message={toast.message} type={toast.type} duration={toast.duration} onClose={() => removeToast(toast.id)} />
         ))}
       </div>
+      {/* Hidden video for face detection analysis */}
+      <video
+        ref={videoRef}
+        style={{ display: 'none' }}
+        autoPlay
+        muted
+        playsInline
+      />
       {mainContent}
       <div className="call-controls-bar" style={{ width: '100vw', position: 'relative', left: 0, bottom: 0, margin: 0, borderRadius: 0, justifyContent: 'center' }}>
         {/* Host-only: Recording toggle */}
@@ -777,6 +917,25 @@ const handleScreenShare = async () => {
           )}
         </Modal>
       )}
+
+      {/* Distraction Alert Modal */}
+      <Modal
+        isOpen={distractionActive}
+        onClose={() => setDistractionActive(false)}
+        title="Are you still there?"
+        size="sm"
+      >
+        <div className="text-center">
+          <p className="mb-4 text-gray-600">We noticed you've been distracted. Please click the button below to confirm you're still following the session.</p>
+          <button
+            onClick={() => setDistractionActive(false)}
+            className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors"
+          >
+            I'm back!
+          </button>
+        </div>
+      </Modal>
+
       {/* You can add a ParticipantsPanel here if you want */}
     </div>
   );

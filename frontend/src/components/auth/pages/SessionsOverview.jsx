@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Calendar, 
-  Clock, 
-  Users, 
-  Video, 
-  Plus, 
-  Search, 
+import {
+  Calendar,
+  Clock,
+  Users,
+  Video,
+  Plus,
+  Search,
   Filter,
   Edit,
   Trash2,
@@ -18,9 +18,9 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { 
-  getMySessionsThunk, 
-  deleteSessionThunk, 
+import {
+  getMySessionsThunk,
+  deleteSessionThunk,
   updateSessionThunk,
   clearError,
   joinSessionThunk
@@ -30,12 +30,12 @@ const SessionsOverview = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
-  const { 
-    mySessions, 
-    loading, 
-    error, 
-    isDeleting, 
-    isUpdating 
+  const {
+    mySessions,
+    loading,
+    error,
+    isDeleting,
+    isUpdating
   } = useSelector(state => state.session);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,6 +75,15 @@ const SessionsOverview = () => {
       toast.success('Session link copied to clipboard!');
     } catch (err) {
       toast.error('Failed to copy link');
+    }
+  };
+
+  const handleCopyId = async (id) => {
+    try {
+      await navigator.clipboard.writeText(id);
+      toast.success('Session ID copied to clipboard!');
+    } catch (err) {
+      toast.error('Failed to copy ID');
     }
   };
 
@@ -244,6 +253,7 @@ const SessionsOverview = () => {
                     session={session}
                     onJoin={handleJoinSession}
                     onCopyLink={handleCopyLink}
+                    onCopyId={handleCopyId}
                     onDelete={handleDeleteSession}
                     isDeleting={isDeleting}
                   />
@@ -266,6 +276,7 @@ const SessionsOverview = () => {
                     session={session}
                     onJoin={handleJoinSession}
                     onCopyLink={handleCopyLink}
+                    onCopyId={handleCopyId}
                     onDelete={handleDeleteSession}
                     isDeleting={isDeleting}
                   />
@@ -288,6 +299,7 @@ const SessionsOverview = () => {
                     session={session}
                     onJoin={handleJoinSession}
                     onCopyLink={handleCopyLink}
+                    onCopyId={handleCopyId}
                     onDelete={handleDeleteSession}
                     isDeleting={isDeleting}
                   />
@@ -327,7 +339,7 @@ const SessionsOverview = () => {
   );
 };
 
-const SessionCard = ({ session, onJoin, onCopyLink, onDelete, isDeleting }) => {
+const SessionCard = ({ session, onJoin, onCopyLink, onCopyId, onDelete, isDeleting }) => {
   const getSessionStatus = (session) => {
     const now = new Date();
     const startTime = new Date(session.startTime);
@@ -384,11 +396,24 @@ const SessionCard = ({ session, onJoin, onCopyLink, onDelete, isDeleting }) => {
           </div>
           <div className="flex items-center space-x-1">
             <button
-              onClick={() => onCopyLink(sessionLink)}
-              className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-              title="Copy link"
+              onClick={() => onCopyId(session.id)}
+              className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+              title="Copy Session ID"
             >
-              <Copy className="h-4 w-4" />
+              <div className="flex items-center gap-1">
+                <Copy className="h-4 w-4" />
+                <span className="text-[10px] font-bold">ID</span>
+              </div>
+            </button>
+            <button
+              onClick={() => onCopyLink(sessionLink)}
+              className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+              title="Copy Sharing Link"
+            >
+              <div className="flex items-center gap-1">
+                <Copy className="h-4 w-4" />
+                <span className="text-[10px] font-bold">LINK</span>
+              </div>
             </button>
             <button
               onClick={() => onDelete(session.id)}

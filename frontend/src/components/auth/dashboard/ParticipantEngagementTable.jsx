@@ -16,9 +16,13 @@ export default function ParticipantEngagementTable({ data }) {
         </thead>
         <tbody>
           {data.map((p, i) => (
-            <tr key={i} className="border-t border-gray-200">
-              <td className="p-2">{p.name}</td>
-              <td className="p-2">{Math.round(p.attention * 100)}%</td>
+            <tr key={i} className="border-t border-gray-100 hover:bg-gray-50 transition-colors text-xs sm:text-sm">
+              <td className="p-3 font-medium text-gray-900">{p.name || 'Anonymous User'}</td>
+              <td className="p-3 text-right">
+                <span className={`px-2 py-1 rounded-full font-bold ${p.avg > 0.7 ? 'bg-green-100 text-green-700' : p.avg > 0.4 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                  {Math.round(p.avg * 100)}%
+                </span>
+              </td>
             </tr>
           ))}
         </tbody>

@@ -54,7 +54,7 @@ const ChatBox = ({ chatClient, channel }) => {
     <Chat client={chatClient} theme="team light">
       <Channel channel={channel} Message={CustomMessage}>
         <Window>
-          <ChannelHeader title={channel?.data.topic || channel?.data.topic || 'No Topic'}/>
+          <ChannelHeader title={channel?.data.name || channel?.data.topic || 'No Topic'} />
           <MessageList />
           <MessageInput />
         </Window>
