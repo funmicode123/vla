@@ -34,7 +34,8 @@ class CreateSessionResponse {
 
   toJSON() {
     return {
-    //   status: false,
+      //   status: false,
+      id: this.id,
       sessionId: this.id,
       topic: this.topic,
       startTime: this.startTime,
